@@ -26,6 +26,11 @@ spring:
 
   kafka:
     bootstrap-servers: kafka:29092
+    consumer:
+      group-id: ms-payment-transaction-command
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
     producer:
       acks: all
       properties:

@@ -18,6 +18,8 @@ import com.yape.payment.transaction.shared.exception.ResourceNotFoundException;
 import jakarta.transaction.Transactional;
 import java.util.UUID;
 import org.springframework.stereotype.Service;
+import com.yape.payment.transaction.infrastructure.kafka.dto.TransactionValidatedEvent;
+
 
 @Service
 public class TransactionService {
@@ -106,5 +108,46 @@ public class TransactionService {
             return TransactionType.TRANSFER;
         }
         return TransactionType.TRANSFER;
+    }
+
+    @Transactional
+    public void applyValidationResult(TransactionValidatedEvent event) {
+        if (event == null || event.getTransactionExternalId() == null) {
+            return;
+        }
+
+        TransactionEntity entity = transactionRepository
+                .findByTransactionExternalId(event.getTransactionExternalId())
+                .orElse(null);
+
+        if (entity == null) {
+            // Puede pasar si llega un validated de una tx inexistente o DB no sincronizada.
+            return;
+        }
+
+        // Idempotencia mínima: si ya está final
+        if (entity.getStatus() == TransactionStatus.APPROVED
+                || entity.getStatus() == TransactionStatus.REJECTED) {
+            return;
+        }
+
+        TransactionStatus newStatus = mapValidatedResult(event.getResult());
+        entity.setStatus(newStatus);
+
+        transactionRepository.save(entity);
+    }
+
+    private TransactionStatus mapValidatedResult(String result) {
+        if (result == null) {
+            return TransactionStatus.REJECTED;
+        }
+        if ("APPROVED".equalsIgnoreCase(result)) {
+            return TransactionStatus.APPROVED;
+        }
+        if ("REJECTED".equalsIgnoreCase(result)) {
+            return TransactionStatus.REJECTED;
+        }
+        // safe default
+        return TransactionStatus.REJECTED;
     }
 }
