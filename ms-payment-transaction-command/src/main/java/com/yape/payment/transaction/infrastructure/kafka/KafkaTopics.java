@@ -1,0 +1,10 @@
+package com.yape.payment.transaction.infrastructure.kafka;
+
+public final class KafkaTopics {
+
+    private KafkaTopics() {
+    }
+
+    public static final String PAYMENT_TRANSACTION_CREATED_V1 =
+            "payment.transaction.created.v1";
+}
