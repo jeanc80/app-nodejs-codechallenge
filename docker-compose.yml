@@ -39,7 +39,9 @@ services:
   kafka-ui:
     image: provectuslabs/kafka-ui:latest
     container_name: yape-kafka-ui
-    depends_on: [kafka]
+    depends_on:
+      - kafka
+      - zookeeper
     ports:
       - "8088:8080"
     environment:
